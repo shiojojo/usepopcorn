@@ -56,6 +56,8 @@ export default function StarRating({
             onRate={() => handleRate(i + 1)}
             onHoverIn={() => setTempRating(i + 1)}
             onHoverOut={() => setTempRating(0)}
+            size={size} // Pass size explicitly
+            color={color} // Pass color explicitly
           />
         ))}
       </div>
@@ -80,7 +82,7 @@ function Star({
     width: `${size}px`,
     height: `${size}px`,
     display: 'block',
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     cursor: 'pointer',
   };
 

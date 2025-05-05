@@ -27,8 +27,8 @@ function Test() {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    {/* <App /> */}
-    <StarRating maxRating={5} />
+    <App />
+    {/* <StarRating maxRating={5} /> */}
     {/* <StarRating maxRating={5} defaultRating={3} color="#fcc419" size={48} /> */}
     {/* <StarRating
       maxRating={5}
@@ -45,7 +45,7 @@ root.render(
       className="custom-class"
       onSetRating={rating => console.log(rating)}
     /> */}
-    <Test />
+    {/* <Test /> */}
   </React.StrictMode>
 );
 
