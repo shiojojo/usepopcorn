@@ -1,5 +1,52 @@
-import { useEffect, useState, useRef } from 'react';
+import { use, useEffect, useState } from 'react';
 import StarRating from './StarRating';
+
+const tempMovieData = [
+  {
+    imdbID: 'tt1375666',
+    Title: 'Inception',
+    Year: '2010',
+    Poster:
+      'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg',
+  },
+  {
+    imdbID: 'tt0133093',
+    Title: 'The Matrix',
+    Year: '1999',
+    Poster:
+      'https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg',
+  },
+  {
+    imdbID: 'tt6751668',
+    Title: 'Parasite',
+    Year: '2019',
+    Poster:
+      'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg',
+  },
+];
+
+const tempWatchedData = [
+  {
+    imdbID: 'tt1375666',
+    Title: 'Inception',
+    Year: '2010',
+    Poster:
+      'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg',
+    runtime: 148,
+    imdbRating: 8.8,
+    userRating: 10,
+  },
+  {
+    imdbID: 'tt0088763',
+    Title: 'Back to the Future',
+    Year: '1985',
+    Poster:
+      'https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg',
+    runtime: 116,
+    imdbRating: 8.5,
+    userRating: 9,
+  },
+];
 
 const API_KEY = process.env.REACT_APP_API_KEY;
 
@@ -8,15 +55,13 @@ const average = arr =>
 
 export default function App() {
   const [query, setQuery] = useState('Interstellar');
-  const [movies, setMovies] = useState([]);
+  const [movies, setMovies] = useState(tempMovieData);
+  const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState();
 
-  const [watched, setWatched] = useState(() => {
-    const storedWatched = localStorage.getItem('watched');
-    return storedWatched ? JSON.parse(storedWatched) : [];
-  });
+  // const query = 'Interstellar';
 
   function handleSelectMovie(id) {
     setSelectedId(currentId => (currentId === id ? null : id));
@@ -34,11 +79,6 @@ export default function App() {
     const updatedWatched = watched.filter(movie => movie.imdbID !== id);
     setWatched(updatedWatched);
   }
-
-  useEffect(() => {
-    // watchedをlocalStorageに保存
-    localStorage.setItem('watched', JSON.stringify(watched));
-  }, [watched]);
 
   useEffect(() => {
     // useEffect内で直接async関数は使えないため、内部でasync関数を定義して呼び出す
@@ -143,26 +183,6 @@ function Logo() {
 }
 
 function Search({ query, setQuery }) {
-  const inputEl = useRef(null);
-
-  useEffect(() => {
-    function callback(e) {
-      if (document.activeElement === inputEl.current) {
-        return; // If the input is focused, do nothing
-      }
-
-      if (e.key === 'Enter') {
-        setQuery('');
-        inputEl.current.focus();
-      }
-    }
-    document.addEventListener('keydown', callback);
-
-    return () => {
-      document.removeEventListener('keydown', callback);
-    };
-  }, [setQuery]);
-
   return (
     <input
       className="search"
@@ -170,7 +190,6 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={e => setQuery(e.target.value)}
-      ref={inputEl}
     />
   );
 }
@@ -287,12 +306,6 @@ function MovieDetails({ selectedId, onCloseMovie, onAddMovie, watched }) {
   const [error, setError] = useState('');
   const [userRating, setUserRating] = useState(0);
 
-  const countRef = useRef(0);
-
-  useEffect(() => {
-    if (userRating) countRef.current++;
-  }, [userRating]);
-
   const isWatched = watched.some(movie => movie.imdbID === selectedId);
   const watchedUserRating = watched.find(
     movie => movie.imdbID === selectedId
@@ -327,7 +340,6 @@ function MovieDetails({ selectedId, onCloseMovie, onAddMovie, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(' ')[0]),
       userRating,
-      countRatingDecisions: countRef.current,
     };
     onAddMovie(newWatchedMovie);
   }
