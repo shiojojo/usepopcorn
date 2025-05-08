@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import StarRating from './StarRating';
+import { useMovies } from './useMovies';
+import useLocalStorageState from './useLocalStorageState';
+import useKey from './useKey';
 
 const API_KEY = process.env.REACT_APP_API_KEY;
 
@@ -8,15 +11,14 @@ const average = arr =>
 
 export default function App() {
   const [query, setQuery] = useState('Interstellar');
-  const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState();
+  const [watched, setWatched] = useLocalStorageState([], 'watched');
 
-  const [watched, setWatched] = useState(() => {
-    const storedWatched = localStorage.getItem('watched');
-    return storedWatched ? JSON.parse(storedWatched) : [];
-  });
+  const { movies, isLoading, error } = useMovies(
+    query,
+    API_KEY,
+    handleCloseMovie
+  );
 
   function handleSelectMovie(id) {
     setSelectedId(currentId => (currentId === id ? null : id));
@@ -34,47 +36,6 @@ export default function App() {
     const updatedWatched = watched.filter(movie => movie.imdbID !== id);
     setWatched(updatedWatched);
   }
-
-  useEffect(() => {
-    // watchedをlocalStorageに保存
-    localStorage.setItem('watched', JSON.stringify(watched));
-  }, [watched]);
-
-  useEffect(() => {
-    // useEffect内で直接async関数は使えないため、内部でasync関数を定義して呼び出す
-    async function fetchMovies() {
-      try {
-        setIsLoading(true); // ローディング開始ß
-        setError('');
-        // APIから映画データを取得
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${API_KEY}&s=${query}`
-        );
-        // fetchが失敗した場合のエラーハンドリング
-        if (!res.ok) {
-          throw new Error('Something went wrong with fetching movies');
-        }
-        const data = await res.json();
-        if (data.Response === 'False') {
-          throw new Error('No movies found');
-        }
-        setMovies(data.Search);
-      } catch (err) {
-        // エラーをコンソールに出力
-        console.error(err.message);
-        setError(err.message); // エラーメッセージをstateに保存
-      } finally {
-        setIsLoading(false); // ローディング終了
-      }
-    }
-
-    if (query.length < 3) {
-      setMovies([]); // クエリが3文字未満の場合は映画データを空にする
-      return;
-    }
-
-    fetchMovies(); // 定義したasync関数を実行
-  }, [query]);
 
   return (
     <>
@@ -145,23 +106,14 @@ function Logo() {
 function Search({ query, setQuery }) {
   const inputEl = useRef(null);
 
-  useEffect(() => {
-    function callback(e) {
-      if (document.activeElement === inputEl.current) {
-        return; // If the input is focused, do nothing
-      }
-
-      if (e.key === 'Enter') {
-        setQuery('');
-        inputEl.current.focus();
-      }
+  // keybinding enter to focus input
+  useKey('Enter', () => {
+    if (document.activeElement === inputEl.current) {
+      return; // If the input is focused, do nothing
     }
-    document.addEventListener('keydown', callback);
-
-    return () => {
-      document.removeEventListener('keydown', callback);
-    };
-  }, [setQuery]);
+    setQuery('');
+    inputEl.current.focus();
+  });
 
   return (
     <input
@@ -333,25 +285,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddMovie, watched }) {
   }
 
   // keybinding esc to close movie details
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') {
-        onCloseMovie();
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onCloseMovie]);
-
-  useEffect(() => {
-    if (!title) return;
-    document.title = `Movie | ${title}`;
-    return () => {
-      document.title = 'usePopcorn';
-    };
-  }, [title]);
+  useKey('Escape', onCloseMovie);
 
   useEffect(() => {
     const controller = new AbortController();
